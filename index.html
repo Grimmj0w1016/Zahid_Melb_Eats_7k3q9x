@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Melb Eats">
+<meta name="robots" content="noindex">
+<style>body{margin:0}</style>
+<title>Melbourne Eats List</title>
+</head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: trip header, filter chips, then one section per food category with an auto-fill card grid */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --fg:#17201c; --muted:#56635c; --line:#d8dfdb;
+  --accent:#1f6b4a; --accent-soft:#e1efe7;
+  --ok:#1d7a45; --ok-bg:#ddf2e4; --warn:#9a5b00; --warn-bg:#fbecd2; --unk:#5b6470; --unk-bg:#e7eaee;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111614; --surface:#19201d; --fg:#e6ece9; --muted:#9aa8a0; --line:#2b3530;
+  --accent:#6fcf9c; --accent-soft:#1d3328;
+  --ok:#7fdca5; --ok-bg:#1b3526; --warn:#f2bd6b; --warn-bg:#3a2c14; --unk:#aeb6c0; --unk-bg:#262c33;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#19201d; --fg:#e6ece9; --muted:#9aa8a0; --line:#2b3530;
+  --accent:#6fcf9c; --accent-soft:#1d3328;
+  --ok:#7fdca5; --ok-bg:#1b3526; --warn:#f2bd6b; --warn-bg:#3a2c14; --unk:#aeb6c0; --unk-bg:#262c33;
+  color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:28px 48px;display:grid;gap:28px}
+header{display:grid;gap:10px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(30px,6vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:62ch;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.chip:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+section{display:grid;gap:12px}
+.sec-head{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+h2{font-family:var(--f-display);font-weight:600;font-size:22px;margin:0}
+.count{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
+.card.done{opacity:.6}
+.top{display:flex;justify-content:space-between;gap:10px;align-items:start}
+h3{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0;line-height:1.2}
+.sub{color:var(--muted);font-size:13px}
+.pill{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)}
+.p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-unk{background:var(--unk-bg);color:var(--unk)}
+.p-cafe{background:var(--accent-soft);color:var(--accent)}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+dd{margin:0;font-variant-numeric:tabular-nums;min-width:0}
+.note{font-size:14px;margin:0}
+.flag{font-size:13px;background:var(--warn-bg);color:var(--warn);padding:8px 10px;border-radius:6px;margin:0}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+a{color:var(--accent);font-weight:700}
+label{display:flex;gap:6px;align-items:center;color:var(--muted);cursor:pointer}
+footer{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-family:var(--f-display);font-weight:600;font-size:16px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 12px;margin-bottom:-1px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.also{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.hfilter{font-size:14px}
+@media (prefers-reduced-motion:no-preference){.card{transition:opacity .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Melbourne · Sat 24 to Tue 27 Oct 2026</div>
+    <nav class="tabs" role="tablist" aria-label="Lists">
+      <button class="tab" role="tab" type="button" data-page="main">Our list</button>
+      <button class="tab" role="tab" type="button" data-page="adi">Adi's picks</button>
+    </nav>
+    <h1 id="title">Melbourne Eats List</h1>
+    <p class="lede" id="lede">Coffee, brunch and dinner spots for the MotoGP trip, grouped by type. Most are in Southbank. Tick a place off once you've been.</p>
+    <div class="chips" role="group" aria-label="Filter by category" id="chips"></div>
+    <div class="legend">
+      <span><span class="pill p-ok">Halal certified</span></span>
+      <span><span class="pill p-warn">Halal options</span></span>
+      <span><span class="pill p-unk">Not confirmed</span></span>
+      <span><span class="pill p-cafe">Cafe</span></span>
+    </div>
+    <label class="hfilter"><input type="checkbox" id="halalOnly"> Halal certified only</label>
+  </header>
+  <main id="list" style="display:grid;gap:28px"></main>
+  <footer id="foot">Details checked 5 to 6 Oct 2026 from venue websites, City of Melbourne What's On, Curateria, HalalHQ and FindHalal. Hours change, so check Google Maps on the day.</footer>
+</div>
+
+<script>
+const CATS = [
+  {id:"coffee", name:"Coffee & brunch"},
+  {id:"bakery", name:"Bakery"},
+  {id:"sando", name:"Sandwiches & bagels"},
+  {id:"dessert", name:"Dessert"},
+  {id:"space", name:"Coffee & hangout space"},
+  {id:"kbbq", name:"Korean BBQ"},
+  {id:"buffet", name:"BBQ & hotpot buffet"},
+  {id:"steak", name:"Steak & grill"},
+  {id:"fish", name:"Fish & chips"},
+  {id:"malay", name:"Malaysian & Singaporean"},
+  {id:"ramen", name:"Japanese"}
+];
+const PLACES = [
+  {id:"workshop", cat:"coffee", name:"Workshop Bros", area:"Southbank", what:"Coffee, Asian-influenced brunch", halal:"cafe",
+   addr:"2 Riverside Quay, Southbank", hours:"Mon to Fri 7am to 4pm · Sat and Sun 8am to 2pm",
+   note:"On the river near Southgate. Katsu chicken curry is on the menu."},
+  {id:"codeblack", cat:"coffee", name:"Code Black Coffee", area:"South Melbourne", what:"Specialty roaster, brunch", halal:"cafe",
+   addr:"321 Coventry St, South Melbourne", hours:"Mon to Fri 7am to 4pm · Sat and Sun 7am to 5pm",
+   note:"Opposite South Melbourne Market. Try the coconut cold brew. Bookings on OpenTable."},
+  {id:"cheri", cat:"coffee", name:"Chéri Eatery", area:"South Melbourne", what:"European-style bakery, brunch and lunch", halal:"unk",
+   addr:"285-287 Coventry St, South Melbourne", hours:"Daily 8am to 5pm",
+   flag:"No halal mention on its site, and it serves alcohol. The pastries, cakes, gelato and vegetarian dishes are the safer picks. Ask staff about meat dishes.",
+   note:"Opposite South Melbourne Market, a few doors from Code Black. Known for pastries, the pistachio hot chocolate and its celebration cakes. Pair it with a market visit."},
+  {id:"summit", cat:"coffee", name:"Mr Summit", area:"Southbank", what:"Single-origin coffee, toasties", halal:"cafe",
+   addr:"165 City Rd or 34 Fawkner St, Southbank", hours:"City Rd: weekdays 6:15am to 3pm, weekends 7am to 3pm · Fawkner St: daily 7am to 3pm",
+   note:"Two venues. City Rd is a short walk from Ten BBQ & Hotpot. Online ordering skips the queue."},
+  {id:"lune", cat:"bakery", name:"Lune Croissanterie", area:"Melbourne CBD", what:"Croissants and pastries, takeaway", halal:"unk",
+   addr:"161 Collins St, Melbourne (enter via Russell St)", hours:"From 7:30am, closes mid-afternoon or when sold out",
+   flag:"Not halal certified. Skip the ham and gruyere croissant. Plain, almond, chocolate and the lemon-curd cruffin have no meat.",
+   note:"Takeaway only, standing benches, no tables. Expect a 15 minute queue. This CBD shop has a shorter line than the Fitzroy flagship, which carries the experimental flavours. Go early in the day."},
+  {id:"hectors", cat:"sando", name:"Hector's Deli", area:"Richmond", what:"Deli sandwiches and coffee", halal:"unk",
+   addr:"94 Buckingham St, Richmond", hours:"From 7:30am, closes around 3pm",
+   flag:"Not halal. The menu includes ham, mortadella and other deli meats, so ask what's pork-free or pick a vegetarian sandwich.",
+   note:"Close to your Richmond Airbnb, so it's an easy breakfast or lunch. Tiny shop with eight seats and Axil coffee. Seven Melbourne locations, including South Melbourne and Fitzroy."},
+  {id:"mileend", cat:"sando", name:"Mile End Bagels", area:"Richmond", what:"Wood-fired bagels", halal:"unk",
+   addr:"115 Burnley St, Richmond", hours:"Weekdays 7:30am to 2:30pm · Weekends 8am to 3pm",
+   flag:"No halal information found. Ask staff about the meat fillings, or go for a cream cheese or egg bagel.",
+   note:"Bagels are wood-fired fresh every day. The Richmond shop is near your Airbnb. Other shops in Fitzroy (14-16 Johnston St, daily 8am to 3pm), Brunswick and Hawthorn."},
+  {id:"chickyboi", cat:"sando", name:"ChickyBoi", area:"Fitzroy", what:"Fried chicken sandwiches", halal:"unk",
+   addr:"375 Brunswick St, Fitzroy", hours:"Closed Monday · other hours not published, check Maps",
+   flag:"No halal information found, and it has a bar serving beer and cocktails. Ask staff where the chicken comes from.",
+   note:"Double-dredged fried chicken sandwich, with a spicy version, and house-made dill crisps instead of chips. Expect a queue out the door."},
+  {id:"nicos", cat:"sando", name:"Nico's Sandwich Deli", area:"Melbourne CBD", what:"Made-to-order sandwiches, Seven Seeds coffee", halal:"unk",
+   addr:"Shop K, Healeys Lane, 535 Little Lonsdale St, Melbourne", hours:"Mon to Fri 7am to 2pm · closed weekends",
+   flag:"Weekdays only, so Monday 26 or Tuesday 27 Oct. Not halal certified, and the deli sandwich uses cured meats. Vegetarian and vegan options are available.",
+   note:"Known for the braised oxtail and beef cheek sandwich on toasted sourdough. Ask whether the beef is halal before ordering it."},
+  {id:"lukes", cat:"sando", name:"Luke's Bánh Mì", area:"Melbourne CBD", what:"Vietnamese bánh mì rolls", halal:"unk",
+   addr:"Shop 3/518 Little Bourke St, Melbourne", hours:"Daily 8am to 4pm",
+   flag:"Not halal. The menu is heavy on pork (pork belly, barbecue pork), and everything comes from one central kitchen. The eight vegan rolls, like vegan lemongrass chicken and vegan duck, are the safe picks.",
+   note:"Rolls from $7 to $13, made fresh by a third-generation baker. A few doors from Shoku Eatery. There's also a South Melbourne shop."},
+  {id:"koi", cat:"dessert", name:"KOI Dessert Bar", area:"Melbourne CBD", what:"Plated desserts and cakes by Reynold Poernomo", halal:"unk",
+   addr:"100 Queen St, Melbourne", hours:"Tue to Sun 10am to 10pm",
+   flag:"Closed Monday. Not halal certified. Desserts can contain gelatine or alcohol, so ask staff which ones are free of both.",
+   note:"From the MasterChef alum's Sydney dessert bar. Melbourne-only flavours include pandan, coconut, mango and almond. You can also sit at the kitchen counter and watch the team plate desserts. Open late, so it suits an after-dinner stop (03 9191 2031)."},
+  {id:"o3", cat:"space", name:"O3", area:"Southbank", what:"Coffee, study and social space", halal:"cafe",
+   addr:"87 Queens Bridge St, Southbank", hours:"Daily 10am to 9pm",
+   note:"Membership-based third place, but walk-ins can buy coffee. Opens later than the others."},
+  {id:"hallah", cat:"kbbq", name:"Hallah", area:"North Melbourne", what:"Korean BBQ on individual hot plates", halal:"ok",
+   addr:"268 Victoria St, North Melbourne", hours:"Dinner from 5:30pm",
+   flag:"Listed as closed on Tuesday, so plan it for Sat, Sun or Mon.",
+   note:"Fully halal Korean BBQ. Near Queen Victoria Market. Popular, so book ahead (03 9329 4293)."},
+  {id:"paroro", cat:"kbbq", name:"Paroro Korean BBQ", area:"Melbourne CBD", what:"All-you-can-eat Korean BBQ, sushi at dinner", halal:"warn",
+   addr:"Level 1, 315 Elizabeth St, Melbourne", hours:"Dinner daily 5 to 10:30pm · Lunch Fri to Sun 12 to 4pm",
+   flag:"City of Melbourne lists it as halal certified, but its own site doesn't mention halal and the grill menu includes pork belly (samgyeopsal). Call to confirm before you book (0484 636 478).",
+   note:"Dinner $49.90 per person, or $54.90 with bottomless soft drinks. Weekend lunch $43.90, without sushi. Sessions are capped at 90 minutes. Adds a 10% weekend surcharge and 1.5% on cards. Book online through paroro.com.au."},
+  {id:"ten", cat:"buffet", name:"Ten BBQ & Hotpot", area:"Southbank", what:"All-you-can-eat Korean BBQ and hotpot", halal:"warn",
+   addr:"143 City Rd, Southbank", hours:"Mon to Thu 5:30 to 10:30pm · Fri 5:30 to 11pm · Sat 12:30 to 11pm · Sun 12:30 to 10:30pm",
+   flag:"Pork is on the same self-serve buffet and the restaurant makes no official halal claim. Beef, chicken and lamb are reported as halal sourced. Ask staff before you go.",
+   note:"About $55 per person (2025 price). Has a prayer room."},
+  {id:"jom", cat:"malay", name:"Jom", area:"Melbourne CBD", what:"Malaysian, lunch and dinner", halal:"ok",
+   addr:"378 Lonsdale St, Melbourne", hours:"Mon to Thu 11am to 9pm · Fri and Sat 11am to 10pm · Sun 11am to 5pm",
+   flag:"Closes at 5pm on Sunday, which is race day. Go Saturday, Monday or Tuesday.",
+   note:"Listed as fully halal. Mid-range prices. Not to be confused with Jom Corner or Jom Makan, which are different venues."},
+  {id:"wnk", cat:"malay", name:"Wee Nam Kee", area:"Melbourne CBD", what:"Singaporean Hainanese chicken rice", halal:"ok",
+   addr:"303 La Trobe St, Melbourne", hours:"Tue to Sun 11:30am to 10pm (Tue to Thu may break 3 to 5pm)",
+   flag:"Closed Monday. Plan it for Saturday or Tuesday lunch.",
+   note:"Halal certified, no alcohol. First Australian branch of the Singapore chain, opened August 2026. Get the chicken rice set with chilli and ginger sauces. Most mains under $20."},
+  {id:"takedon", cat:"ramen", name:"Ta-Ke Don", area:"Melbourne CBD", what:"Thai-Japanese rice bowls", halal:"ok",
+   addr:"4/265 Little Lonsdale St, Melbourne", hours:"Daily 11am to 11pm",
+   note:"Halal certified, no alcohol. Bowls from $10 small, $15 large. Pick katsu, karaage or tempura prawn with Japanese curry, Thai basil, green curry or teriyaki. Ask for extra spice. Open late every day, including Sunday after the race."},
+  {id:"kome", cat:"ramen", name:"Kome Eatery", area:"Docklands", what:"Japanese home-style rice meals and coffee", halal:"warn",
+   addr:"Shop 4/845 Collins St, Docklands", hours:"Mon to Fri 9:30am to 3pm · Sat and Sun 10am to 3pm",
+   flag:"Listed as having halal options, not fully halal. It also serves sake and Japanese beer. Ask staff which dishes are halal.",
+   note:"Breakfast or lunch only. Onigiri, sandos, ochazuke, teishoku and chicken katsu curry, plus matcha and hojicha drinks. At the base of the ANZ Centre."},
+  {id:"chiki", cat:"ramen", name:"Chiki Chiki", area:"Melbourne CBD", what:"Udon, katsu and curry rice, self-serve", halal:"unk",
+   addr:"Shop 2/187 Elizabeth St, Melbourne", hours:"Sun to Thu 10:30am to 10pm · Fri and Sat 10:30am to 2am",
+   flag:"No halal information found. Ask staff about the chicken and beef. The udon broth may contain dashi, and the pumpkin and sweet potato tempura are meat-free picks.",
+   note:"Cheap, fast and busy. Pick your udon, then add tempura from the self-serve counter. Open until 2am on Friday and Saturday, so it works for a late feed on Saturday night."},
+  {id:"shoku", cat:"ramen", name:"Shoku Eatery", area:"Melbourne CBD", what:"Sushi platters, bento and donburi", halal:"unk",
+   addr:"514 Little Bourke St, Melbourne", hours:"Lunch Mon to Sat about 12 to 3pm · Dinner Wed to Sun from 5:30pm",
+   flag:"No halal information found, and it serves sake and Japanese whisky. Sushi and seafood sets are the safer picks. Lunch only on Mon and Tue, and sources disagree on weekend lunch, so check Maps.",
+   note:"Known for big sushi platters on bamboo trays. Also eel teishoku and teriyaki chicken don. Rated 4.8 on Google, so call ahead for dinner (0466 992 946)."},
+  {id:"commoncuts", cat:"steak", name:"Common Cuts", area:"Melbourne CBD", what:"Charcoal-grilled wagyu and Angus steakhouse", halal:"unk",
+   addr:"Ground Floor, 380 Russell St, Melbourne", hours:"Dinner daily 5 to 9pm (Sunday may be lunch only) · Lunch Thu to Sun 11:30am to 3pm",
+   flag:"No halal information found, and it runs a full cocktail bar. For a steakhouse this matters most, so call to ask about meat sourcing before you book (0435 168 521).",
+   note:"Steak frites from about $28.50, up to a 2kg tomahawk. Also wagyu brisket lasagne, burgers and grilled chicken. Book online through SevenRooms. Pricier than most of this list."},
+  {id:"editas", cat:"fish", name:"Edita's Fish'n'Chips", area:"Carlton North", what:"Fish and chips with a Tongan and Samoan twist", halal:"unk",
+   addr:"382 Rathdowne St, Carlton North", hours:"Wed to Sun 12 to 3pm and 5 to 8pm (9pm Fri and Sat)",
+   flag:"Closed Monday and Tuesday, so Saturday is your best shot. Not halal certified. The fish is fine, but the menu has pork dim sims and beef spring rolls, so ask if they share a fryer with the fish and chips.",
+   note:"Family-run by siblings Tima and Stan Tausinga. Get the fish burger with house tartare on a potato bun, the hand-cut triple-cooked chips and the prawn tacos."},
+  {id:"tori", cat:"ramen", name:"Tori no Keiji", area:"Melbourne (TBC)", what:"Osaka chicken-broth ramen and yakitori", halal:"unk",
+   addr:"Not announced", hours:"Not open yet",
+   flag:"The Melbourne site still says Coming Soon, with no address or opening date. Halal status is not stated. Watch @torino_keiji_melb on Instagram.",
+   note:"Melbourne outpost of Osaka's Keiji Project."}
+];
+const ADI_CATS = [
+  {id:"bake", name:"Bakery & coffee"},
+  {id:"rest", name:"Restaurants"},
+  {id:"rolls", name:"Rolls"}
+];
+// "ref" entries reuse the card from the main list
+const ADI = [
+  {id:"bakemono", cat:"bake", name:"Bakemono Bakers", area:"Melbourne CBD", what:"Japanese and Korean inspired bakery", halal:"unk",
+   addr:"273 Little Lonsdale St, Melbourne (enter via Drewery Lane)", hours:"Mon to Fri 7:30am to 3pm · Sat and Sun 8:30am to 3pm",
+   flag:"Not halal certified. The menu has a ham and cheese croissant, and canelés usually contain rum.",
+   note:"Known for Korean-style garlic bread, almond yuzu croissants and shokupan. Weekend queues are long and items sell out, so go early Saturday."},
+  {id:"publique", cat:"bake", name:"Publique Bakery", area:"Queen Victoria Market", what:"French-style bakery, breads and pastries", halal:"unk",
+   addr:"18 Blender Lane, Melbourne", hours:"Tue to Sun 7:30am to 3pm · closed Mon",
+   flag:"Closed Monday 26 Oct. Not halal certified. Ham and cheese croissants and a croque monsieur are on the menu.",
+   note:"Get the bow-shaped Pain de Ruban with almond cream and raspberry. Pastries about $8 to $10.50. The original shop is at Preston Market."},
+  {ref:"lune", cat:"bake"},
+  {id:"pinned", cat:"bake", name:"Pinned Coffee", area:"Melbourne CBD", what:"Tiny laneway specialty coffee bar", halal:"cafe",
+   addr:"Rankins Lane, Melbourne (same building as Manchester Press)", hours:"Not published, check Maps",
+   note:"Opened in 2026. Order the Lion Tamer: double ristretto, orange syrup, milk and spiced orange cream. Pastries come from May Bakes in Richmond. Very small, so plan to take away."},
+  {id:"regulars", cat:"bake", name:"Regulars", area:"Melbourne CBD", what:"Specialty coffee, the viral minus 85 degree dirty", halal:"cafe",
+   addr:"Ground Floor, 38-40 Little La Trobe St, Melbourne", hours:"Daily 9am to 4pm",
+   note:"The Dirty -85°C pours espresso over milk frozen to minus 85 degrees, so it has an ice-cream texture. Also matcha and cold brew. Queues run down the block, so go early."},
+  {id:"heebi", cat:"bake", name:"Heebi", area:"Carlton", what:"Japanese kissaten-style cafe, house-made shio pan", halal:"unk",
+   addr:"127 Pelham St, Carlton", hours:"Mon to Fri 7:30am to 5pm · Sat and Sun 8am to 5pm",
+   flag:"Not halal certified. One layer cake uses bourbon, and canelés usually contain rum. The shio pan and drinks are the safer picks.",
+   note:"Order shio pan with the Heebi drink, a coffee topped with sweet cream for dipping. Open until 5pm, so it suits an afternoon stop."},
+  {id:"groove", cat:"bake", name:"groove. coffee shop", area:"Abbotsford", what:"Vietnamese coffee, matcha and cakes", halal:"cafe",
+   addr:"17 Lithgow St, Abbotsford", hours:"Daily 7:30am to 6pm (one source only, check Maps)",
+   note:"Next door to Richmond, so it's close to your Airbnb. Try the hot egg coffee or the strawberry cloud matcha. Basque cheesecake about $9.50. Best match for the name, but confirm with Adi."},
+  {id:"enso", cat:"bake", name:"Atelier Enso", area:"Carlton", what:"Calm, Zen-style specialty coffee shop", halal:"cafe",
+   addr:"8 Raffa Place, Carlton", hours:"Wed to Sun 7:30am to 3:30pm (sources disagree on Mon, check Maps)",
+   flag:"Probably closed Monday 26 and Tuesday 27 Oct, so go Saturday.",
+   note:"Run by a Q grader and world championship judge. Roasts seasonal single origins on site. Swiss rolls and cookies from the Gaea kitchen. On Broadsheet's Hot List."},
+  {id:"inbtwn", cat:"bake", name:"in.btwn", area:"Queen Victoria Market", what:"Coffee stall with cocktail-style seasonal drinks", halal:"ok",
+   addr:"Munro Shed, Stall 1.3, 11 Dhanga Djeembana Walk, Melbourne", hours:"Tue, Thu, Fri 6am to 3pm · Sat 6am to 4pm · Sun 9am to 4pm · closed Mon and Wed",
+   flag:"Closed Monday 26 Oct. Zabihah lists it as fully halal with no alcohol, based on staff assurance, not a certificate.",
+   note:"Known for einspanner and matcha drinks. Little seating. Pair it with a market visit on Saturday or Tuesday."},
+  {id:"goodmeasure", cat:"bake", name:"Good Measure", area:"Carlton", what:"Cafe by day, cocktail bar by night", halal:"unk",
+   addr:"193 Lygon St, Carlton", hours:"Sun to Thu 8am to 11pm · Fri and Sat 8am to 1am",
+   flag:"Serves cocktails, beer and wine. Meat dishes like the ox cheek roll aren't stated as halal. Go in the daytime for coffee.",
+   note:"Home of the viral Mont Blanc: filter coffee with black sugar syrup, cream, nutmeg and orange zest. Near Heebi and Atelier Enso, so do all three in one Carlton trip."},
+  {id:"queenstbb", cat:"bake", name:"QueenSt.BB", area:"Melbourne CBD", what:"Self-serve tiramisu by weight, plus gelato", halal:"unk",
+   addr:"408 Queen St, Melbourne", hours:"Daily 12pm to 10pm",
+   flag:"Tiramisu often has coffee liqueur or Marsala. Ask which flavours are alcohol-free.",
+   note:"Fill a tub from rotating flavours like matcha, strawberry and fig, or cookies and cream, and pay by weight. Open late, so it works for dessert after dinner. Near Queen Victoria Market."},
+
+  {id:"nelayan", cat:"rest", name:"Nelayan", area:"Melbourne CBD", what:"Indonesian, pick-your-own counter", halal:"ok",
+   addr:"265 Swanston St, Melbourne", hours:"Daily 10am to 9pm",
+   note:"Zabihah lists it as fully halal with a halal sign on site and no alcohol. Pick a carb and three dishes. Get the beef rendang, iga bakar (grilled beef ribs) and sate padang. Sister venue Enak by Nelayan is at 195 Lonsdale St."},
+  {id:"guljak", cat:"rest", name:"Guljak Rhapsody", area:"Kew", what:"Korean tteokbokki and fried chicken", halal:"unk",
+   addr:"158 High St, Kew", hours:"Mon to Sat 11:30am to 2:30pm and 5 to 11pm · Sun to 9pm (check Maps)",
+   flag:"No halal claim found for Kew, and it's licensed. The CBD sister shop (Guljak Topokki Chicken, Emporium, 287 Lonsdale St) shows a halal certificate, but a halal blogger reported alcohol and ham there. Ask at either one.",
+   note:"About 6km east of the CBD. Try the charcoal bulgogi topokki ($28) or the boneless lemon cream chicken ($33)."},
+  {ref:"paroro", cat:"rest"},
+  {id:"takomama", cat:"rest", name:"Takomama", area:"Coburg", what:"Mexican street food", halal:"unk",
+   addr:"Shop 15, 1 Champ St, Coburg (Pentridge)", hours:"Tue to Sun 12 to 9pm (9:30pm Fri and Sat) · closed Mon",
+   flag:"Closed Monday 26 Oct. No halal claim on its site or delivery listings, and it serves margaritas. Ask about the meat.",
+   note:"About 9km north of the CBD. Tacos, birria tacos, burritos, quesadillas and churros. Book online or call 0434 268 323."},
+  {id:"garammerica", cat:"rest", name:"GaramMerica", area:"St Kilda Rd", what:"Indonesian warteg, nasi bungkus", halal:"ok",
+   addr:"Ground Floor, 348 St Kilda Rd, Melbourne (Seasons Botanic Gardens)", hours:"Thu to Sun 11am to 3pm · closed Mon to Wed",
+   flag:"Saturday 24 Oct is the only day that works. Listed as halal certified by Taste of Indonesia and Halal Streets.",
+   note:"Lunch only. Nasi bungkus sets about $19 to $21. Try the rendang, iga penyet and gulai kikil. Arrive near 11am, as dishes sell out."},
+  {id:"cevapi", cat:"rest", name:"The Cevapi Project", area:"Queen Victoria Market", what:"Bosnian grill, cevapi and burek", halal:"warn",
+   addr:"15 Dhanga Djeembana Walk, Melbourne", hours:"Market days, roughly Tue, Thu, Fri 10am to 4pm, Sat to 8pm, Sun to 4pm · closed Mon",
+   flag:"Closed Monday 26 Oct. HalalMaps lists it as halal, but the venue makes no claim and sells house-cured meats. Ask staff.",
+   note:"Sarajevo-style cevapi in somun bread with onion, kajmak and ajvar, about $23. Also pljeskavica and beef burek."},
+  {id:"onda", cat:"rest", name:"Onda Bar & Eatery", area:"Richmond", what:"Latin American share plates", halal:"warn",
+   addr:"280 Bridge Rd, Richmond", hours:"Tue to Thu 5 to 10pm · Fri and Sat 12 to 10pm · Sun 12 to 3pm · closed Mon",
+   flag:"Closed Monday 26 Oct. Its own site says halal-friendly choices, not a halal menu, and it's a licensed bar. Ask which meats are halal.",
+   note:"Walking distance from your Richmond Airbnb. Whole menu is gluten free. Try the ceviche, corn elotes, smoked beef short rib and chocolate cigars. Also at 312 Brunswick St, Fitzroy."},
+  {ref:"wnk", cat:"rest"},
+  {id:"happylamb", cat:"rest", name:"Happy Lamb Hot Pot", area:"Melbourne CBD", what:"Mongolian-style hot pot", halal:"ok",
+   addr:"173-175 Exhibition St, Melbourne", hours:"Daily 12 to 11pm, last order 10pm (check Maps)",
+   flag:"City of Melbourne's halal guide says the meat, broth and mix-ins are all halal. Its own site makes no claim, so confirm when you arrive.",
+   note:"All-you-can-eat or à la carte, with lamb the focus. Book weekend dinners on 03 9650 7518."},
+  {id:"hanoipho", cat:"rest", name:"Hanoi Pho Preston", area:"Preston", what:"Vietnamese pho", halal:"warn",
+   addr:"4 Cramer St, Preston", hours:"Thu to Tue 11:30am to 8pm · closed Wed",
+   flag:"Listed with halal options, not fully halal. Ask about the meat and broth.",
+   note:"About 10km north of the CBD. Known for beef pho (pho bo tai) and rice paper rolls."},
+  {id:"liberty", cat:"rest", name:"Liberty Slices", area:"South Melbourne", what:"New York-style pizza", halal:"warn",
+   addr:"146 Clarendon St, South Melbourne", hours:"Mon to Thu 12 to 9pm · Fri and Sat 12 to 10pm · Sun 12 to 9pm",
+   flag:"HalalHQ lists it as fully halal with no pork, and it uses beef rashers and smoked turkey. No certificate, and the menu lists ham, salami and pepperoni without naming the meat. Ask first.",
+   note:"16-inch pizzas by the slice or whole. Try Buffalo Chicken, Harlem Salami or Little Italy Meatball. Whole pies about $30."},
+  {id:"bbqk", cat:"rest", name:"BBQ-K", area:"Endeavour Hills", what:"Korean BBQ", halal:"warn",
+   addr:"78 Heatherton Rd, Endeavour Hills", hours:"Daily 12 to 3pm and 5 to 10pm (check Maps)",
+   flag:"Halal options including wagyu, but it serves pork and alcohol. Ask for halal meat and a clean grill.",
+   note:"About 35km south-east, around 45 minutes' drive. Only worth it with a car. There's also a BBQ-K in Doncaster East with no halal claim, so confirm which one Adi meant."},
+  {id:"volcanos", cat:"rest", name:"Volcanos Steakhouse", area:"Epping", what:"Halal steakhouse", halal:"ok",
+   addr:"Shop B010, Pacific Epping, 571-583 High St, Epping", hours:"Sun to Wed 11:30am to 9pm · Thu to Sat 11:30am to 10pm",
+   flag:"About 20km north of the CBD.",
+   note:"Halal certified, no alcohol. Steaks, wagyu burgers like the Eruption Burger, slow-cooked ribs and meat platters. Book online or on 1300 787 737. Also at Pacific Werribee."},
+  {id:"mansae", cat:"rest", name:"Mansae Korean BBQ", area:"Queen Victoria Market", what:"Korean BBQ, wagyu cuts", halal:"warn",
+   addr:"12-16 Dhanga Djeembana Walk, Melbourne", hours:"Dinner Sun to Thu 5 to 10pm, Fri and Sat to 11pm · Lunch Sat and Sun 12 to 3pm",
+   flag:"Pork belly is on the menu and it serves alcohol. Halal Streets reports all beef is halal certified. Ask for halal and a fresh grill, and skip the yukhoe (it has mirin).",
+   note:"Known for marbled wagyu. The Happiness Set is about $110. No bookings, so arrive near 5pm."},
+  {id:"salerokito", cat:"rest", name:"Salero Kito", area:"Melbourne CBD", what:"Indonesian Padang food", halal:"ok",
+   addr:"264-266 Russell St, Melbourne", hours:"Mon to Wed 11am to 9pm · Thu to Sat to 9:30pm · Sun 11:30am to 9pm",
+   note:"Halal certified West Sumatran food from the counter. Get the beef rendang, grilled beef ribs and curry chicken on rice. Cheap and quick. Second shop at 9 Rose Lane closes earlier."},
+  {id:"shinbashi", cat:"rest", name:"Shinbashi Yakiniku", area:"Carlton", what:"Japanese BBQ (yakiniku)", halal:"warn",
+   addr:"294 Lygon St, Carlton", hours:"Daily 5:30 to 10:30pm, last orders 9:30pm",
+   flag:"Pork belly is on the menu and it serves alcohol. Halal Streets reports everything else is halal except the A5 wagyu, with separate utensils and fresh grills. Confirm with staff.",
+   note:"All-you-can-eat about $60 per person. Book ahead on 03 9347 3528."},
+  {id:"nikuland", cat:"rest", name:"Nikuland", area:"Melbourne CBD", what:"Wagyu hamburg and table grill", halal:"warn",
+   addr:"Level 1, 258 Lonsdale St, Melbourne", hours:"Daily 11:30am to 10pm",
+   flag:"No certificate on its site. HalalMaps lists it as halal and Halal Streets reports all meat halal and no pork, but it serves alcohol.",
+   note:"Get the Wagyu Hikiniku Don, a wagyu hamburg you finish on your own grill. Sets about $16 to $40. Book on OpenTable or call 0447 738 952."},
+  {id:"incredibowl", cat:"rest", name:"Incredibowl", area:"Melbourne CBD", what:"Halal wonton noodles", halal:"ok",
+   addr:"380 Elizabeth St, Melbourne", hours:"Daily 10am to midnight (check Maps)",
+   note:"Run by Bowltiful's owners, right next door to Bowltiful Elizabeth St. Lamb and shrimp or beef and onion wontons, about $18 to $20 for 10. Get the dry peanut sauce version."},
+  {id:"bowltiful", cat:"rest", name:"Bowltiful", area:"Melbourne CBD", what:"Lanzhou hand-pulled beef noodles", halal:"ok",
+   addr:"249 Swanston St, Melbourne (also 382-384 Elizabeth St)", hours:"Daily 10am to 2am",
+   note:"Halal certified Chinese Muslim beef noodle soup, noodles pulled to order. Cheap, fast and open until 2am, so it works after you're back from the race on Sunday night."},
+
+  {id:"mybrothers", cat:"rolls", name:"My Brother's Deli", area:"Pascoe Vale", what:"Focaccias, melts and sandos", halal:"unk",
+   addr:"7 Pascoe St, Pascoe Vale", hours:"Mon to Fri 7am to 4pm · Sat and Sun 7:30am to 3pm (check Maps)",
+   flag:"No certificate found. It uses beef rasher instead of bacon and a halal reviewer recommends it, but the mortadella and pastrami aren't labelled. Ask staff.",
+   note:"About 11km north, 30 to 40 minutes from Richmond. Try the Brother Reuben Melt or the MBD Focaccia (mortadella, stracciatella, hot honey, pistachio). About $18 to $22."},
+  {id:"charlies", cat:"rolls", name:"Charlie's Deli", area:"Niddrie", what:"Halal deli, fresh, toasted and fried rolls", halal:"ok",
+   addr:"81 Hoffmans Rd, Niddrie", hours:"Daily 9am to 3pm (check Maps)",
+   flag:"Halal Streets calls it 100% halal. No certificate seen, so confirm in store.",
+   note:"About 12km north-west near Essendon, 35 to 45 minutes from Richmond. Get the Rib Eye Steak Frites ($23), Vodka Meatball ($23) or Charlie's Reuben ($19)."},
+  {id:"nydeli", cat:"rolls", name:"The New York Deli", area:"Windsor", what:"NY-style deli, house-smoked pastrami", halal:"ok",
+   addr:"44 Chapel St, Windsor (also 85 Union St, Brunswick)", hours:"Brunswick: weekdays 8am to 4pm, weekends 9am to 4pm · Windsor: check Maps",
+   flag:"Promotes its halal pastrami, and Halal Streets reports no pork or alcohol. No certificate seen.",
+   note:"Windsor is about 3km from Richmond, the closest deli on this list. Get the pastrami sandwich (about $19) or the meatball parm (about $16)."},
+  {id:"delicious", cat:"rolls", name:"Deli-cious", area:"Melbourne CBD", what:"Halal Italian deli, focaccias and rolls", halal:"ok",
+   addr:"497 Flinders Lane, Melbourne", hours:"Mon to Fri 8am to 2:30pm · Sat 10am to 2pm · closed Sun",
+   flag:"HalalHQ and Zabihah list it as fully halal with no pork or alcohol, based on staff assurance. Closes early, so go before 2pm.",
+   note:"Takeaway only, at the King St end of Flinders Lane. Halal salami, cheese and focaccia rolls. Good for Saturday or Monday lunch."},
+  {id:"alien", cat:"rolls", name:"Alien&Coco", area:"Melbourne CBD", what:"Korean-inspired sandwiches and coffee", halal:"ok",
+   addr:"Shop 4/111 Hardware St, Melbourne", hours:"Mon to Fri 7:30am to 3pm · closed weekends",
+   flag:"Closed weekends, so Monday 26 or Tuesday 27 Oct only. City of Melbourne lists all meat as halal certified.",
+   note:"Get the Korean BBQ beef cheesesteak or the beef pastrami sandwich, with a Yuzu Black or matcha. Little seating."},
+  {id:"rotibar", cat:"rolls", name:"Roti Bar", area:"Melbourne CBD", what:"Malaysian, handmade roti and rendang", halal:"ok",
+   addr:"416-418 Little Collins St, Melbourne", hours:"Lunch Mon to Sat 11am to 3pm · Dinner Tue to Fri 5:30 to 9pm · closed Sun",
+   flag:"Its site says halal certified, but it's licensed, so alcohol is on site. One review says roti rolls are off the menu, so check first.",
+   note:"Sit-down Malaysian rather than a deli. Reviewers rate the flaky roti and the beef rendang. Budget prices."}
+];
+const PAGES = {
+  main:{title:"Melbourne Eats List", cats:CATS, places:PLACES,
+    lede:"Coffee, brunch and dinner spots for the MotoGP trip, grouped by type. Most are in Southbank. Tick a place off once you've been.",
+    foot:"Details checked 5 to 6 Oct 2026 from venue websites, City of Melbourne What's On, Curateria, HalalHQ and FindHalal. Hours change, so check Google Maps on the day."},
+  adi:{title:"Adi's Picks", cats:ADI_CATS, places:ADI.map(a => a.ref ? {...PLACES.find(p => p.id === a.ref), cat:a.cat, also:true} : a),
+    lede:"Adilah's recommendations for Melbourne, in the order she gave them. Several are out in the suburbs, so check the distance before you go. Places marked \"Also on our list\" share their tick with the first page.",
+    foot:"Details checked 6 Oct 2026 from venue websites, City of Melbourne What's On, Broadsheet, Time Out, Zabihah, HalalHQ, HalalMaps and Halal Streets. Halal status from directories and reviewers is not certification, so confirm in store. Hours change, so check Google Maps on the day."}
+};
+const PILL = {cafe:["p-cafe","Cafe"], ok:["p-ok","Halal certified"], warn:["p-warn","Halal options"], unk:["p-unk","Not confirmed"]};
+let filter = "all", done = {}, page = location.hash === "#adi" ? "adi" : "main", halalOnly = false;
+try { done = JSON.parse(localStorage.getItem("eats-done") || "{}") } catch(e) {}
+function save(){ try { localStorage.setItem("eats-done", JSON.stringify(done)) } catch(e) {} }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function chips(){
+  const el = document.getElementById("chips");
+  const all = [{id:"all", name:"All"}, ...PAGES[page].cats];
+  el.innerHTML = all.map(c => `<button class="chip" type="button" data-f="${c.id}" aria-pressed="${filter===c.id}">${esc(c.name)}</button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { filter = b.dataset.f; chips(); render(); });
+}
+function card(p){
+  const [cls, label] = PILL[p.halal];
+  const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.name + " " + (p.addr.startsWith("Not") ? "Melbourne" : p.addr));
+  return `<article class="card${done[p.id] ? " done" : ""}">
+    <div class="top"><div><h3>${esc(p.name)}</h3><div class="sub">${esc(p.area)} · ${esc(p.what)}</div>${p.also ? `<div class="also">Also on our list</div>` : ""}</div><span class="pill ${cls}">${label}</span></div>
+    <dl><dt>Where</dt><dd>${esc(p.addr)}</dd><dt>Hours</dt><dd>${esc(p.hours)}</dd></dl>
+    ${p.flag ? `<p class="flag">${esc(p.flag)}</p>` : ""}
+    <p class="note">${esc(p.note)}</p>
+    <div class="foot"><a href="${maps}" target="_blank" rel="noopener">Open in Maps</a>
+      <label for="d-${p.id}"><input type="checkbox" id="d-${p.id}" data-id="${p.id}" ${done[p.id] ? "checked" : ""}> Been there</label></div>
+  </article>`;
+}
+function render(){
+  const main = document.getElementById("list");
+  const pg = PAGES[page];
+  document.getElementById("title").textContent = pg.title;
+  document.getElementById("lede").textContent = pg.lede;
+  document.getElementById("foot").textContent = pg.foot;
+  document.title = pg.title;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.page === page));
+  main.innerHTML = pg.cats.filter(c => filter === "all" || filter === c.id).map(c => {
+    const items = pg.places.filter(p => p.cat === c.id && (!halalOnly || p.halal === "ok"));
+    if (!items.length) return "";
+    return `<section><div class="sec-head"><h2>${esc(c.name)}</h2><span class="count">${items.length} ${items.length === 1 ? "place" : "places"}</span></div>
+      <div class="grid">${items.map(card).join("")}</div></section>`;
+  }).join("");
+  main.querySelectorAll("input[type=checkbox]").forEach(i => i.onchange = () => {
+    done[i.dataset.id] = i.checked; save(); i.closest(".card").classList.toggle("done", i.checked);
+  });
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  page = t.dataset.page; filter = "all";
+  try { history.replaceState(null, "", page === "adi" ? "#adi" : "#") } catch(e) {}
+  chips(); render(); window.scrollTo(0, 0);
+});
+document.getElementById("halalOnly").onchange = e => { halalOnly = e.target.checked; render(); };
+chips(); render();
+</script>
+
+</body></html>
